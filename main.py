@@ -13,7 +13,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # o especifica tu dominio React
+    allow_origins=["https://cesde-academic.netlify.app"],  # o especifica tu dominio React
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
