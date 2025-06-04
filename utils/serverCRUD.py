@@ -7,7 +7,7 @@ def validar_token_con_tipo(token: str, tipo_usuario: str) -> bool:
         "Authorization": f"Bearer {token}"
     }
     try:
-        response = requests.get(f"{server}/validate/{tipo_usuario}", headers=headers)
+        response = requests.get(f"{server}/auth/validate/{tipo_usuario}", headers=headers)
         print("Respuesta", response)
         return response.status_code == 200
     except Exception as e:
