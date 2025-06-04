@@ -2,7 +2,7 @@ import requests
 import pandas as pd
 from requests.auth import HTTPBasicAuth
 
-def docente_promedios_por_grupos(docenteId: int):
+def docente_promedios_grupo_one(docenteId: int):
     auth = HTTPBasicAuth("12344321", "DevUser123")
 
     # 1. Obtener clases del docente

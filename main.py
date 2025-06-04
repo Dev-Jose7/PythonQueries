@@ -32,9 +32,9 @@ def get_estudiante_calificaciones_three(id: int):
     return analizar_calificaciones_estudiante_three(id)
 
 
-@app.get("/docentes/1/notas")
-def get_docentes_notas_grupo_one():
-    return docente_promedios_grupo_one()
+@app.get("/docentes/{id}/notas")
+def get_docentes_notas_grupo_one(id: int):
+    return docente_promedios_grupo_one(id)
 
 @app.get("docentes/2/asistencia")
 def get_docentes_riesgo_asistencia():
