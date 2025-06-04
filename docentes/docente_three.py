@@ -1,62 +1,96 @@
 import requests
 import pandas as pd
-from requests.auth import HTTPBasicAuth
+from fastapi import HTTPException
 
-#Cual es el porcentaje Total de estados de asistencia
+from utils.serverCRUD import validar_token_con_tipo, server
 
-def docentes_porcentajes_de_estado_por_grupo_three():
-    auth=HTTPBasicAuth("12344321", "DevUser123")
-##accedo a docentes
-    Docentes_URL="https://cesde-academic-app-development.up.railway.app/usuario/buscar/tipo/DOCENTE"
-    responseDocentes=requests.get(Docentes_URL,auth=auth)
-    dataDocente=responseDocentes.json()
-    df_docentes = pd.DataFrame(dataDocente)
+def docentes_porcentajes_de_estado_por_grupo_three(docenteId: int, token: str, tipo_usuario: str):
+    # Validar token y tipo
+    if not validar_token_con_tipo(token, tipo_usuario):
+        raise HTTPException(status_code=403, detail="Token inválido o sin permisos para este tipo de usuario")
 
-    ##accedo a las clases para obetener el codigo del grupo
-    Clases_URL="https://cesde-academic-app-development.up.railway.app/clase/docente/101"
-    responseClases=requests.get(Clases_URL,auth=auth)
-    dataClase=responseClases.json()
-    df_clases =pd.DataFrame(dataClase)
+    headers = {"Authorization": f"Bearer {token}"}
 
-    codigoGrupo='P1-S2025-1-1'
+    try:
+        # Paso 1: Obtener clases del docente
+        url_clases = f"{server}/clase/docente/{docenteId}"
+        response_clases = requests.get(url_clases, headers=headers)
+        if response_clases.status_code != 200:
+            raise HTTPException(status_code=500, detail="No se pudieron obtener las clases del docente.")
+        data_clases = response_clases.json()
 
-    #por el codigo del grupo busco en el endpoint el id
-    GrupoCodigo_URL=f"https://cesde-academic-app-development.up.railway.app/grupo/buscar/codigo/{codigoGrupo}"
-    responseGrupoPorCodigo=requests.get(GrupoCodigo_URL,auth=auth)
-    dataGroupdGetId=responseGrupoPorCodigo.json()
-    
+        # Paso 2: Tomar el primer grupo válido encontrado
+        codigo_grupo = None
+        for clase in data_clases:
+            if "grupo" in clase:
+                codigo_grupo = clase["grupo"]
+                break
 
-    idGrupo=dataGroupdGetId[0]['id']
+        if not codigo_grupo:
+            return {"mensaje": "No se encontró ningún grupo asignado al docente."}
 
-    #busco en el endpoint los estudientes por grupo
-    GrupoID_URL=f"https://cesde-academic-app-development.up.railway.app/grupo-estudiante/grupo/{idGrupo}"
-    responseEstudiantesGrupo=requests.get(GrupoID_URL,auth=auth)
-    dataEstudiantesporGroupId=responseEstudiantesGrupo.json()
-    df_EstudiantesGrupoPorId=pd.DataFrame(dataEstudiantesporGroupId)
-    #print(dataEstudiantesporGroupId)
+        # Paso 3: Buscar grupo por código
+        url_grupo_codigo = f"{server}/grupo/buscar/codigo/{codigo_grupo}"
+        response_grupo = requests.get(url_grupo_codigo, headers=headers)
+        if response_grupo.status_code != 200:
+            return {"mensaje": "No se pudo encontrar el grupo con el código proporcionado."}
 
-    #creo una lista para guardar los id de los estudiantes
-    listaEstudiantes_ids = df_EstudiantesGrupoPorId["estudianteId"].tolist()
-    print(listaEstudiantes_ids)
+        data_grupo = response_grupo.json()
+        if not isinstance(data_grupo, list) or not data_grupo or 'id' not in data_grupo[0]:
+            return {"mensaje": "El grupo no contiene un ID válido."}
 
-    df_Asistencias_total=[]
+        id_grupo = data_grupo[0]['id']
 
-    for EstudianteId in listaEstudiantes_ids:
-        AsistenciaPorId_URL=f"https://cesde-academic-app-development.up.railway.app/asistencia/estudiante/{EstudianteId}"
-        response = requests.get(AsistenciaPorId_URL)
+        # Paso 4: Obtener estudiantes del grupo
+        url_estudiantes = f"{server}/grupo-estudiante/grupo/{id_grupo}"
+        response_estudiantes = requests.get(url_estudiantes, headers=headers)
+        if response_estudiantes.status_code != 200:
+            return {"mensaje": "No se pudieron obtener los estudiantes del grupo."}
 
-        if response.status_code == 200:
-            data_asistencias = response.json()
-            df_asistencias = pd.DataFrame(data_asistencias)
-            
-            if not df_asistencias.empty:
-                df_asistencias["estudianteId"] = EstudianteId
-                df_Asistencias_total.append(df_asistencias)
+        data_estudiantes = response_estudiantes.json()
+        if not isinstance(data_estudiantes, list) or not data_estudiantes:
+            return {"mensaje": "No se encontraron estudiantes en el grupo."}
 
-    # Unir todos los registros en un solo DataFrame
-    df_asistencias_final = pd.concat(df_Asistencias_total, ignore_index=True)
+        df_estudiantes = pd.DataFrame(data_estudiantes)
+        if 'estudianteId' not in df_estudiantes.columns:
+            return {"mensaje": "Falta la columna 'estudianteId' en los datos de estudiantes."}
 
-    # Contar total de asistencias e inasistencias (sin importar estudiante)
-    conteo_estados = df_asistencias_final["estado"].value_counts()
+        lista_estudiantes_ids = df_estudiantes["estudianteId"].dropna().tolist()
+        if not lista_estudiantes_ids:
+            return {"mensaje": "No se encontraron IDs de estudiantes válidos."}
 
-    return conteo_estados
+        # Paso 5: Obtener asistencias por estudiante
+        df_asistencias_total = []
+        for estudiante_id in lista_estudiantes_ids:
+            url_asistencias = f"{server}/asistencia/estudiante/{estudiante_id}"
+            response = requests.get(url_asistencias, headers=headers)
+            if response.status_code == 200:
+                try:
+                    data_asistencias = response.json()
+                    if isinstance(data_asistencias, list) and data_asistencias:
+                        df = pd.DataFrame(data_asistencias)
+                        if 'estado' in df.columns:
+                            df["estudianteId"] = estudiante_id
+                            df_asistencias_total.append(df)
+                except ValueError:
+                    continue  # JSON inválido
+
+        if not df_asistencias_total:
+            return {"mensaje": "No se encontraron registros de asistencia para ningún estudiante."}
+
+        try:
+            df_final = pd.concat(df_asistencias_total, ignore_index=True)
+        except ValueError:
+            return {"mensaje": "Error al unir los datos de asistencia."}
+
+        if df_final.empty or 'estado' not in df_final.columns:
+            return {"mensaje": "No hay datos suficientes o falta la columna 'estado'."}
+
+        # Paso 6: Calcular porcentaje por estado
+        conteo_estados = df_final["estado"].value_counts(normalize=True) * 100
+        conteo_estados = conteo_estados.round(2)
+
+        return conteo_estados.to_dict()
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error inesperado: {str(e)}")

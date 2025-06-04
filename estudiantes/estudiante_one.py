@@ -1,29 +1,47 @@
 import requests
 import pandas as pd
-from requests.auth import HTTPBasicAuth
 
-def analizar_estudiante_one(id: int):
-    # Autenticación básica
-    auth = HTTPBasicAuth("12344321", "DevUser123")
+from fastapi import HTTPException
 
-    # 1. Obtener los datos desde el endpoint protegido usando auth
-    url = f"https://cesde-academic-app-development.up.railway.app/asistencia/estudiante/{id}"
-    response = requests.get(url, auth=auth)
+from utils.serverCRUD import validar_token_con_tipo
+from utils.serverCRUD import server
 
-    # 2. Convertir respuesta JSON a DataFrame
-    data = response.json()
+def analizar_estudiante_one(id: int, token: str, tipo_usuario: str) -> dict:
+    # Validar token antes de continuar
+    if not validar_token_con_tipo(token, tipo_usuario):
+        raise HTTPException(status_code=403, detail="Token inválido o sin permisos para este tipo de usuario")
+
+    # Realizar petición a la API de asistencia con el token
+    endpoint = f"{server}/asistencia/estudiante/{id}"
+    headers = {"Authorization": f"Bearer {token}"}
+    response = requests.get(endpoint, headers=headers)
+
+    if response.status_code == 204 or not response.content:
+        return {}
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail="Error al obtener datos de asistencia")
+
+    try:
+        data = response.json()
+    except ValueError:
+        raise HTTPException(status_code=500, detail="Respuesta JSON inválida")
+
+    if not isinstance(data, list) or not data:
+        return {}
+
     df = pd.DataFrame(data)
 
-    # 3. Convertir columna 'fecha' a datetime
-    df['fecha'] = pd.to_datetime(df['fecha'])
+    if 'fecha' not in df.columns or 'estado' not in df.columns:
+        return {}
 
-    # 4. Filtrar datos entre enero y junio de 2025
+    df['fecha'] = pd.to_datetime(df['fecha'], errors='coerce')
+    df = df.dropna(subset=['fecha'])
+
     inicio = pd.Timestamp('2025-01-01')
     fin = pd.Timestamp('2025-06-30')
     df_filtrado = df[(df['fecha'] >= inicio) & (df['fecha'] <= fin)]
 
-    # 5. Contar cuántas veces aparece cada estado (ASISTENCIA, INASISTENCIA, etc.)
     conteo_estados = df_filtrado['estado'].value_counts().to_dict()
 
-    # 6. Devolver el resultado para que React lo grafique
     return conteo_estados

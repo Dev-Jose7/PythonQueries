@@ -1,30 +1,48 @@
 import requests
 import pandas as pd
-from requests.auth import HTTPBasicAuth
+from fastapi import HTTPException
 
-# Evolución de asistencias por fecha
-def analizar_estudiante_two(id: int):
-    # Autenticación básica
-    auth = HTTPBasicAuth("12344321", "DevUser123")
+from utils.serverCRUD import validar_token_con_tipo, server
 
-    # 1. Obtener los datos desde el endpoint protegido usando auth
-    Asistencia_URL = f"https://cesde-academic-app-development.up.railway.app/asistencia/estudiante/{id}"
-    response = requests.get(Asistencia_URL, auth=auth)
+def analizar_estudiante_two(id: int, token: str, tipo_usuario: str) -> dict:
+    # 1. Validar token antes de continuar
+    if not validar_token_con_tipo(token, tipo_usuario):
+        raise HTTPException(status_code=403, detail="Token inválido o sin permisos para este tipo de usuario")
 
-    # 2. Convertir respuesta JSON a DataFrame
-    data = response.json()
+    # 2. Realizar petición autenticada
+    endpoint = f"{server}/asistencia/estudiante/{id}"
+    headers = {"Authorization": f"Bearer {token}"}
+    response = requests.get(endpoint, headers=headers)
+
+    if response.status_code == 204 or not response.content:
+        return {}  # No hay contenido
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail="Error al obtener asistencias del estudiante")
+
+    try:
+        data = response.json()
+    except ValueError:
+        raise HTTPException(status_code=500, detail="Respuesta JSON inválida")
+
+    if not isinstance(data, list) or not data:
+        return {}
+
     df = pd.DataFrame(data)
 
-    # Convertir 'fecha' a datetime
-    df['fecha'] = pd.to_datetime(df['fecha'])
+    if 'fecha' not in df.columns or 'estado' not in df.columns:
+        return {}
 
-    # Filtrar solo inasistencias
+    # Procesamiento
+    df['fecha'] = pd.to_datetime(df['fecha'], errors='coerce')
+    df = df.dropna(subset=['fecha'])
+
     inasistencias = df[df['estado'] == 'INASISTENCIA']
+    if inasistencias.empty:
+        return {}
 
-    # Contar inasistencias por fecha
     conteo_por_fecha = inasistencias.groupby('fecha').size()
 
-    # Convertir fechas a string y valores a int para que sea JSON serializable
     conteo_dict = {
         fecha.strftime('%Y-%m-%d'): int(cantidad)
         for fecha, cantidad in conteo_por_fecha.items()
