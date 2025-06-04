@@ -19,28 +19,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/estudiantes/{id}/asistencias")
+@app.get("/estudiantes/{id}/asistencias/one")
 def get_estudiante_asistencias_one(id: int):
     return analizar_estudiante_one(id)
 
-@app.get("/estudiantes/{id}/asistencias")
+@app.get("/estudiantes/{id}/asistencias/two")
 def get_estudiantes_asistencias_two(id: int):
     return analizar_estudiante_two(id)
 
-@app.get("/estudiantes/{id}/califiaciones")
+@app.get("/estudiantes/{id}/calificaciones/three")
 def get_estudiante_calificaciones_three(id: int):
     return analizar_calificaciones_estudiante_three(id)
 
 
-@app.get("/docentes/{id}/notas")
+@app.get("/docentes/{id}/notas/one")
 def get_docentes_notas_grupo_one(id: int):
     return docente_promedios_grupo_one(id)
 
-@app.get("docentes/2/asistencia")
+@app.get("docentes/2/asistencia/two")
 def get_docentes_riesgo_asistencia():
     return docente_obetener_estudiantes_en_riesgo_asistencia_two()
 
-@app.get("docentes/3/aistencias/porcentajes")
+@app.get("docentes/3/aistencias/porcentajes/three")
 def get_porcentaje_estado_asistencias_three():
     return docentes_porcentajes_de_estado_por_grupo_three()
 
