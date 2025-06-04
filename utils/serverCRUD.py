@@ -8,6 +8,7 @@ def validar_token_con_tipo(token: str, tipo_usuario: str) -> bool:
     }
     try:
         response = requests.get(f"{server}/validate/{tipo_usuario}", headers=headers)
+        print(response)
         return response.status_code == 200
     except Exception as e:
         print(f"Error al validar token: {e}")

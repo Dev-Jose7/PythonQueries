@@ -26,6 +26,7 @@ def get_estudiante_asistencias_one(
     tipo: str,
     authorization: str = Header(..., alias="Authorization")
 ):
+    print("authorization: " + authorization)
     token = authorization.replace("Bearer ", "")
     return analizar_estudiante_one(id, token, tipo)
 
