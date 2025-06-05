@@ -26,7 +26,6 @@ def get_estudiante_asistencias_one(
     tipo: str,
     authorization: str = Header(..., alias="Authorization")
 ):
-    print("authorization: " + authorization)
     return analizar_estudiante_one(id, authorization, tipo)
 
 # Estudiante asistencia TWO (requiere token y tipo)
@@ -36,8 +35,7 @@ def get_estudiantes_asistencias_two(
     tipo: str,
     authorization: str = Header(..., alias="Authorization")
 ):
-    token = authorization.replace("Bearer ", "")
-    return analizar_estudiante_two(id, token, tipo)
+    return analizar_estudiante_two(id, authorization, tipo)
 
 # Estudiante calificaciones THREE (requiere token y tipo)
 @app.get("/estudiantes/{id}/calificaciones/three/{tipo}")
