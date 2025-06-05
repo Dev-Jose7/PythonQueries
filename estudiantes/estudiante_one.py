@@ -7,6 +7,7 @@ from utils.serverCRUD import validar_token_con_tipo
 from utils.serverCRUD import server
 
 def analizar_estudiante_one(id: int, authorization: str, tipo_usuario: str) -> dict:
+    print(authorization)
     # Validar token antes de continuar
     if not validar_token_con_tipo(authorization, tipo_usuario):
         raise HTTPException(status_code=403, detail="Token inválido o sin permisos para este tipo de usuario")
