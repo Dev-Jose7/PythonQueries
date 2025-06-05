@@ -2,10 +2,11 @@ import requests;
 
 server = "https://cesde-academic-app-production.up.railway.app"
 
-def validar_token_con_tipo(token: str, tipo_usuario: str) -> bool:
+def validar_token_con_tipo(authorization: str, tipo_usuario: str) -> bool:
     headers = {
-        "Authorization": f"Bearer {token}"
+        "Authorization": authorization
     }
+    print("validando", headers)
     try:
         response = requests.get(f"{server}/auth/validate/{tipo_usuario}", headers=headers)
         print("Respuesta", response)

@@ -6,14 +6,14 @@ from fastapi import HTTPException
 from utils.serverCRUD import validar_token_con_tipo
 from utils.serverCRUD import server
 
-def analizar_estudiante_one(id: int, token: str, tipo_usuario: str) -> dict:
+def analizar_estudiante_one(id: int, authorization: str, tipo_usuario: str) -> dict:
     # Validar token antes de continuar
-    if not validar_token_con_tipo(token, tipo_usuario):
+    if not validar_token_con_tipo(authorization, tipo_usuario):
         raise HTTPException(status_code=403, detail="Token inválido o sin permisos para este tipo de usuario")
 
     # Realizar petición a la API de asistencia con el token
     endpoint = f"{server}/asistencia/estudiante/{id}"
-    headers = {"Authorization": f"Bearer {token}"}
+    headers = {"Authorization": authorization}
     response = requests.get(endpoint, headers=headers)
 
     if response.status_code == 204 or not response.content:

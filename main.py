@@ -27,8 +27,7 @@ def get_estudiante_asistencias_one(
     authorization: str = Header(..., alias="Authorization")
 ):
     print("authorization: " + authorization)
-    token = authorization.replace("Bearer ", "")
-    return analizar_estudiante_one(id, token, tipo)
+    return analizar_estudiante_one(id, authorization, tipo)
 
 # Estudiante asistencia TWO (requiere token y tipo)
 @app.get("/estudiantes/{id}/asistencias/two/{tipo}")
