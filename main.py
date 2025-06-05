@@ -44,8 +44,7 @@ def get_estudiante_calificaciones_three(
     tipo: str,
     authorization: str = Header(..., alias="Authorization")
 ):
-    token = authorization.replace("Bearer ", "")
-    return analizar_calificaciones_estudiante_three(id, token, tipo)
+    return analizar_calificaciones_estudiante_three(id, authorization, tipo)
 
 # Docente notas grupo ONE (requiere token y tipo)
 @app.get("/docentes/{id}/notas/one/{tipo}")
@@ -54,8 +53,7 @@ def get_docentes_notas_grupo_one(
     tipo: str,
     authorization: str = Header(..., alias="Authorization")
 ):
-    token = authorization.replace("Bearer ", "")
-    return docente_promedios_grupo_one(id, token, tipo)
+    return docente_promedios_grupo_one(id, authorization, tipo)
 
 # Docente asistencia riesgo TWO (requiere token y tipo)
 @app.get("/docentes/{id}/asistencia/two/{tipo}")

@@ -4,14 +4,14 @@ from fastapi import HTTPException
 
 from utils.serverCRUD import validar_token_con_tipo, server
 
-def analizar_calificaciones_estudiante_three(id: int, token: str, tipo_usuario: str) -> dict:
+def analizar_calificaciones_estudiante_three(id: int, authorization: str, tipo_usuario: str) -> dict:
     # 1. Validar token
-    if not validar_token_con_tipo(token, tipo_usuario):
+    if not validar_token_con_tipo(authorization, tipo_usuario):
         raise HTTPException(status_code=403, detail="Token inválido o sin permisos para este tipo de usuario")
 
     # 2. Consultar calificaciones
     endpoint = f"{server}/calificacion/estudiante/{id}"
-    headers = {"Authorization": f"Bearer {token}"}
+    headers = {"Authorization": authorization}
     response = requests.get(endpoint, headers=headers)
 
     if response.status_code == 204 or not response.content:
