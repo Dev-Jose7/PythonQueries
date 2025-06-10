@@ -5,9 +5,6 @@ from fastapi import HTTPException
 from utils.serverCRUD import validar_token_con_tipo, server
 
 def docente_promedios_grupo_one(docenteId: int, authorization: str, tipo_usuario: str):
-    # 1. Validar token
-    if not validar_token_con_tipo(authorization, tipo_usuario):
-        raise HTTPException(status_code=403, detail="Token inválido o sin permisos para este tipo de usuario")
 
     headers = {"Authorization": authorization}
 

@@ -62,8 +62,7 @@ def get_docentes_riesgo_asistencia(
     tipo: str,
     authorization: str = Header(..., alias="Authorization")
 ):
-    token = authorization.replace("Bearer ", "")
-    return docente_obtener_estudiantes_en_riesgo_asistencia_two(id, token, tipo)
+    return docente_obtener_estudiantes_en_riesgo_asistencia_two(id, authorization, tipo)
 
 # Docente porcentaje estados asistencia THREE (requiere token y tipo)
 @app.get("/docentes/{id}/asistencias/porcentajes/three/{tipo}")
@@ -72,8 +71,7 @@ def get_porcentaje_estado_asistencias_three(
     tipo: str,
     authorization: str = Header(..., alias="Authorization")
 ):
-    token = authorization.replace("Bearer ", "")
-    return docentes_porcentajes_de_estado_por_grupo_three(id, token, tipo)
+    return docentes_porcentajes_de_estado_por_grupo_three(id, authorization, tipo)
 
 # Servidor Uvicorn
 if __name__ == "__main__":

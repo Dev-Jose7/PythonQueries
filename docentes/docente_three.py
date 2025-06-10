@@ -4,12 +4,9 @@ from fastapi import HTTPException
 
 from utils.serverCRUD import validar_token_con_tipo, server
 
-def docentes_porcentajes_de_estado_por_grupo_three(docenteId: int, token: str, tipo_usuario: str):
-    # Validar token y tipo
-    if not validar_token_con_tipo(token, tipo_usuario):
-        raise HTTPException(status_code=403, detail="Token inválido o sin permisos para este tipo de usuario")
+def docentes_porcentajes_de_estado_por_grupo_three(docenteId: int, authorization: str, tipo_usuario: str):
 
-    headers = {"Authorization": f"Bearer {token}"}
+    headers = {"Authorization": authorization}
 
     try:
         # Paso 1: Obtener clases del docente
